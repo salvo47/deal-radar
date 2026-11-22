@@ -1,0 +1,66 @@
+# Täglicher Cloud-Lauf, unabhängig vom Mac.
+# Modell: erst Gemini (kostenlose Stufe), wenn dessen Kontingent leer ist ein Open-Source-Modell
+# (Gemma 3 4B über Ollama) direkt auf dem Runner – ohne Key, ohne Tageslimit. Benachrichtigung: GitHub-Issue (GitHub mailt es und pusht es in der GitHub-App). Der Vault-Kanal geht in der Cloud nicht.
+# Die SQLite-Datenbank (Dedupe, Gesundheitsstatus) wird über den Actions-Cache von Lauf zu Lauf
+# weitergereicht. Ungenutzte Caches löscht GitHub nach 7 Tagen – bei täglichem Lauf kein Problem.
+name: deal-radar
+on:
+  schedule:
+    # 08:15 UTC = 09:15 MEZ / 10:15 MESZ: kurz nach dem täglichen Reset des Gemini-Gratiskontingents
+    # (Mitternacht Pazifikzeit). Früher am Morgen würde der Lauf das Restkontingent des Vortags erwischen.
+    - cron: "15 8 * * *"
+  workflow_dispatch:
+concurrency: { group: deal-radar, cancel-in-progress: false }
+permissions: { contents: read, issues: write }
+env:
+  OLLAMA_MODEL: gemma3:4b
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip }
+      - run: pip install -e .
+      - name: Datenbank vom letzten Lauf holen
+        uses: actions/cache/restore@v4
+        with:
+          path: data
+          key: dealradar-db-${{ github.run_id }}
+          restore-keys: dealradar-db-
+      - name: Open-Source-Modell zwischenspeichern
+        uses: actions/cache@v4
+        with:
+          path: ~/.ollama/models
+          key: ollama-${{ env.OLLAMA_MODEL }}-v1
+      - name: Ollama starten
+        run: |
+          curl -fsSL https://ollama.com/install.sh | sh
+          sudo systemctl stop ollama || true
+          mkdir -p ~/.ollama/models
+          OLLAMA_MODELS=$HOME/.ollama/models nohup ollama serve > /tmp/ollama.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:11434/api/tags >/dev/null && break; sleep 1; done
+          OLLAMA_MODELS=$HOME/.ollama/models ollama pull "$OLLAMA_MODEL"
+          nproc; free -g | head -2
+      - name: Deal Radar
+        run: python -m dealradar run
+        env:
+          DEALRADAR_LLM_PROVIDER: auto
+          DEALRADAR_OLLAMA_MODEL: ${{ env.OLLAMA_MODEL }}
+          DEALRADAR_OLLAMA_NUM_CTX: "8192"
+          DEALRADAR_OLLAMA_MAX_CHARS: "9000"
+          DEALRADAR_OLLAMA_MAX_MINUTES: "35"
+          DEALRADAR_CHANNELS: github
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Datenbank sichern (auch nach Fehlern)
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: data
+          key: dealradar-db-${{ github.run_id }}
+      - name: Log hochladen
+        if: always()
+        uses: actions/upload-artifact@v4
+        with: { name: dealradar-log, path: logs/, retention-days: 14 }

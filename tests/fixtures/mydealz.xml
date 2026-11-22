@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:pepper="http://www.pepper.com/rss" xmlns:media="http://search.yahoo.com/mrss/">
+<channel><title>mydealz</title>
+<item><category><![CDATA[Versicherung & Finanzen]]></category><pepper:merchant name="Testbank"/>
+<title><![CDATA[50 € Bonus für Testkonto (Platzhalter)]]></title>
+<description><![CDATA[<strong>Testbank</strong><br/>Neukunde, <a href="https://www.testbank.de/bedingungen.pdf">Bedingungen</a> <a href="https://www.mydealz.de/visit/threads/123">Zum Deal</a>]]></description>
+<link>https://www.mydealz.de/deals/testkonto-123</link><guid>https://www.mydealz.de/deals/testkonto-123</guid>
+<pubDate>Sat, 21 Nov 2026 11:53:23 +0100</pubDate></item>
+<item><title><![CDATA[Festgeld 3,5% 1 Jahr (Platzhalter)]]></title><description><![CDATA[Text]]></description>
+<link>https://www.mydealz.de/deals/festgeld-456</link><guid>https://www.mydealz.de/deals/festgeld-456</guid></item>
+</channel></rss>

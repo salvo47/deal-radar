@@ -1,0 +1,101 @@
+# Deal Radar – Hauptkonfiguration
+# Alle Beträge in Euro. Änderungen wirken beim nächsten Lauf.
+
+min_net_gain_eur: 30            # Schwellenwert: nur Treffer mit mehr Nettogewinn melden
+region: ["DE", "EU"]
+wohnsitz: DE                    # Aktionen mit Wohnsitzpflicht in anderen Ländern werden aussortiert
+categories:                     # true = aktiv
+  konto_praemie: true           # 1. Konto-/Kontowechsel-Prämien
+  depot_praemie: true           # 2. Depot-/Broker-Prämien, Depotwechsel
+  order_aktion: true            # 3. Prämie/Cashback pro Trade, Gebührenerstattung
+  neukundenzins: true           # 4. befristete Neukundenzinsen
+  preisfehler: true             # 5. Preisfehler / außergewöhnliche Ersparnis
+  cashback: true                # 6. Geld-zurück, gratis testen, Cashback auf Käufe/Verträge
+  wechselbonus: true            # 7. Wechsel-/Abschlussbonus Strom, Gas, DSL, Mobilfunk, Versicherung
+  gutschein_praemie: true       # 8. Gutscheine/Punkte, die sich in Geld umwandeln lassen
+  sonstiges: false
+risk_max: mittel                # niedrig | mittel | hoch
+high_risk_multiplier: 5         # hohes Risiko nur melden, wenn Netto > 5 x Schwelle
+min_konfidenz: 0.3              # darunter wird nicht gemeldet (nur geloggt)
+max_alerts_per_day: 5
+
+llm:
+  provider: ollama              # ollama = lokal | gemini = Cloud, kostenlose Stufe | anthropic = Claude API (Guthaben nötig)
+                                # im GitHub-Actions-Lauf per DEALRADAR_LLM_PROVIDER=gemini überschrieben
+  gemini:
+    model: gemini-3.8-flash     # kostenlose Stufe (2.5 gibt es für neue Keys nicht mehr) von Google AI Studio (Key: GEMINI_API_KEY)
+    # kostenlose Stufe: je Modell nur 20 Anfragen/Tag (Reset 09:00 deutscher Zeit) -> viele Ausweichmodelle
+    fallback_models: [gemini-3.7-flash, gemini-3.6-flash, gemini-3.5-flash, gemini-flash-latest,
+                      gemini-3.1-flash-lite, gemini-3.5-flash-lite, gemini-flash-lite-latest]
+    search_conditions: true     # Google-Suche nach Originalbedingungen (nur für vielversprechende Funde)
+    attempts: 1                 # bei Minutenlimit sofort nächstes Modell (kein Warten; spart Runner-Minuten)
+    min_interval_seconds: 7     # Abstand zwischen Anfragen (Minutenlimit der kostenlosen Stufe)
+    max_conditions_chars: 200000
+    timeout_seconds: 120
+  ollama:
+    model: gemma3:12b           # lokal; llama3.1 (8B) war für die Bedingungsanalyse zu unzuverlässig
+    host: http://localhost:11434
+    num_ctx: 32768              # Kontextfenster in Tokens (mehr = mehr RAM)
+    max_conditions_chars: 60000 # längere Bedingungen werden nicht gekürzt, sondern als "zu lang" gemeldet
+    timeout_seconds: 900
+  # --- Einstellungen für provider: anthropic ---
+  model: claude-opus-5-5
+  effort: medium                # low | medium | high | xhigh | max
+  max_tokens: 16000
+  fallbacks: true               # serverseitiger Fallback bei Ablehnung durch Sicherheitsfilter
+  find_conditions_with_web_search: true
+  web_search_max_uses: 3
+  budget_per_run_eur: 3.00      # Abbruch der LLM-Schritte, wenn überschritten
+  max_deals_per_run: 20         # Mengenbremse (lokal ca. 4–6 min pro Deal)
+  max_verifications_per_run: 8  # so oft pro Lauf: Originalbedingungen suchen und neu prüfen
+  verify_min_factor: 0.5        # ... für Funde ab 50 % der Schwelle, deren Bedingungen fehlten
+  # Preise USD pro 1 Mio. Tokens (Stand 2026-11, bei Modellwechsel anpassen)
+  price_input_usd_per_mtok: 4.0
+  price_output_usd_per_mtok: 20.0
+  price_web_search_usd_per_1000: 10.0
+  usd_to_eur: 0.92
+  max_conditions_chars: 120000  # längere Bedingungen werden NICHT gekürzt, sondern als "zu lang" gemeldet
+
+# Vorfilter ohne LLM: Einträge ohne erkennbaren Betrag/Zins werden nicht analysiert
+prefilter:
+  enabled: true
+  min_amount_factor: 1.0        # größter erkennbarer Betrag >= Faktor x Schwelle (Netto kann nicht über der Prämie liegen)
+  keywords_always: ["pro Trade", "pro Order", "je Order", "je Trade", "Preisfehler", "Zinsen", "p.a."]
+
+# Annahmen der Gewinnrechnung (konservativ, siehe README)
+calc:
+  verfuegbares_kapital_eur: 10000  # so viel würdest du maximal anlegen/binden – Zinsvorteile werden darauf begrenzt
+  stundensatz_eur: 20           # Wert der eigenen Zeit
+  referenz_zins_prozent: 2.0    # was das Geld anderswo ohne Aktion bringt
+  spread_prozent_default: 0.30  # angenommener Spread je Kauf+Verkauf, falls unbekannt (PFOF-Verbot seit 07/2026)
+  handelsplatzentgelt_eur_default: 0.0
+  sicherheitsabschlag_order_prozent: 15  # Abschlag auf Order-Prämien (Rückforderung, Ausreißer)
+  gutschein_faktor: 0.90        # Gutscheine sind weniger wert als Bargeld
+  sachpraemie_faktor: 0.60
+  produkt_restwert_faktor: 0.30  # Kaufpflicht ohne belegten Restwert: Produkt mit 30 % des Kaufpreises ansetzen
+  restwert_belegt_faktor: 0.80   # belegter Wiederverkaufswert abzüglich Verkaufsaufwand
+  max_wiederholungen_ohne_limit: 10   # wenn kein Limit genannt ist, nie mehr als das ansetzen
+  abgeltungsteuer_auf_zinsen: true
+  abgeltungsteuer_prozent: 26.375
+
+# Erneute Prüfung der Bedingungen bereits gemeldeter Deals (Update-Erkennung)
+recheck_conditions_days: 7
+
+http:
+  user_agent: "DealRadar/0.1 (privater, nicht-kommerzieller Aktions-Monitor; ein Abruf pro Tag)"
+  min_delay_seconds: 2.0
+  timeout_seconds: 30
+  cache_ttl_hours: 12
+
+health:
+  source_down_warn_days: 3
+
+notify:
+  channels: [email, vault]      # verfügbar: email, ntfy, vault, github (console läuft immer); Cloud: DEALRADAR_CHANNELS=github
+  email_mode: digest            # digest = eine Mail pro Lauf, per_deal = eine Mail pro Treffer
+  vault_dir: "~/Obsidian/Deals"   # eigener Pfad: DEALRADAR_VAULT_DIR in .env
+
+paths:
+  db: data/dealradar.sqlite
+  cache_dir: data/cache
+  log_file: logs/dealradar.log

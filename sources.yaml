@@ -1,0 +1,59 @@
+# Quellen. Jede Quelle ist ein eigenes Modul unter dealradar/sources/.
+# Felder: module (Python-Modul), enabled, cache (Rohantworten auf Platte zwischenspeichern),
+# min_delay_seconds (überschreibt http.min_delay_seconds), weitere Felder gehen an den Parser.
+#
+# Prüfung robots.txt/Nutzungsbedingungen: siehe README, Abschnitt "Quellen und Regeln".
+
+modern_banking:
+  module: modern_banking
+  enabled: true
+  # Tagesgeld-Aktionen stehen dort auf den Giro-/Broker-Seiten bzw. im RSS; eine eigene Seite gibt es nicht.
+  cache: false            # Impressum untersagt das Speichern von Inhalten -> nur im Speicher verarbeiten
+  pages:
+    - https://www.modern-banking.de/brokerage-neukunden.htm
+    - https://www.modern-banking.de/girokonten-neukundenaktionen.htm
+
+mydealz:
+  module: mydealz_rss
+  enabled: true
+  cache: true
+  # robots.txt sperrt KI-Crawler; daher ausschließlich der öffentliche RSS-Feed der Gruppe
+  feeds:
+    - https://www.mydealz.de/rss/gruppe/konto-kreditkarten
+    - https://www.mydealz.de/rss/gruppe/cashback        # Cashback-Aktionen, auch über Portale
+    - https://www.mydealz.de/rss/gruppe/geld-zurueck    # Geld-zurück-Garantie, gratis testen
+    - https://www.mydealz.de/rss/gruppe/strom-gas       # Wechsel-/Sofortbonus Energie
+    - https://www.mydealz.de/rss/gruppe/dsl             # Wechselbonus Internet
+    - https://www.mydealz.de/rss/gruppe/preisfehler
+    - https://www.mydealz.de/rss/gruppe/payback         # Punkte-Aktionen
+
+finanztip:
+  module: finanztip
+  enabled: true
+  cache: true
+  min_delay_seconds: 3.0  # robots.txt: Crawl-delay 3
+  pages:
+    - https://www.finanztip.de/deals/
+
+brokerexperte:
+  module: brokerexperte
+  enabled: true
+  cache: true
+  pages:
+    - https://www.brokerexperte.de/
+
+depot_vergleichen:
+  module: depot_vergleichen
+  enabled: true
+  cache: true
+  pages:
+    - https://www.depot-vergleichen.de/neukundenaktionen/
+
+praemien_programme:
+  module: praemien_programme
+  enabled: true
+  cache: true
+  pages:
+    - https://www.praemien-programme.de/praemien-fuer-depotuebertraege-depots-kreditkarten-kredite.php
+    - https://www.praemien-programme.de/praemien-fuer-girokonten.php
+    - https://www.praemien-programme.de/praemien-fuer-tagesgeldkonten-festgelder-sparbuecher-sparplaene.php
