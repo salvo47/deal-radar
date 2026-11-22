@@ -213,3 +213,22 @@ def test_timeout_weicht_auf_naechstes_modell_aus(monkeypatch):
                     "2026-11-22", client=c)
     llm._post_any({"contents": []})
     assert len(calls) == 2 and llm.model == "zweit"
+
+
+def test_5xx_mit_einem_versuch_weicht_aus(monkeypatch):
+    import httpx
+    from dealradar.llm_gemini import GeminiLLM
+    monkeypatch.setattr("time.sleep", lambda s: None)
+    calls = []
+
+    def handler(req):
+        calls.append(req.url.path)
+        if "erst" in req.url.path:
+            return httpx.Response(503, json={"error": {"message": "overloaded"}})
+        return httpx.Response(200, json={"candidates": [{"content": {"parts": [{"text": "{}"}]}}]})
+
+    c = httpx.Client(base_url="https://x", transport=httpx.MockTransport(handler))
+    llm = GeminiLLM({"gemini": {"model": "erst", "fallback_models": ["zweit"], "attempts": 1,
+                                "min_interval_seconds": 0}}, "2026-11-22", client=c)
+    llm._post_any({"contents": []})
+    assert len(calls) == 2 and llm.model == "zweit"

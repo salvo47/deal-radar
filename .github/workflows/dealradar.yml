@@ -17,7 +17,7 @@ env:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -50,7 +50,8 @@ jobs:
           DEALRADAR_OLLAMA_MODEL: ${{ env.OLLAMA_MODEL }}
           DEALRADAR_OLLAMA_NUM_CTX: "8192"
           DEALRADAR_OLLAMA_MAX_CHARS: "9000"
-          DEALRADAR_OLLAMA_MAX_MINUTES: "35"
+          DEALRADAR_OLLAMA_MAX_MINUTES: "75"
+          DEALRADAR_MAX_DEALS: "40"
           DEALRADAR_CHANNELS: github
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

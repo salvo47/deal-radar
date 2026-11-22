@@ -49,6 +49,8 @@ def load_config(root: Path | None = None, config_file: str = "config.yaml",
         raw["llm"]["provider"] = os.environ["DEALRADAR_LLM_PROVIDER"].strip()
     if os.environ.get("DEALRADAR_CHANNELS"):
         raw["notify"]["channels"] = [c.strip() for c in os.environ["DEALRADAR_CHANNELS"].split(",") if c.strip()]
+    if os.environ.get("DEALRADAR_MAX_DEALS"):
+        raw["llm"]["max_deals_per_run"] = int(os.environ["DEALRADAR_MAX_DEALS"])
     if os.environ.get("DEALRADAR_VAULT_DIR"):          # persönlicher Pfad bleibt in .env, nicht im Repo
         raw["notify"]["vault_dir"] = os.environ["DEALRADAR_VAULT_DIR"].strip()
     env = {k: v for k, v in os.environ.items()

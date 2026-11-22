@@ -217,9 +217,9 @@ ein Lauf braucht ca. 40).
 
 - Modell: `DEALRADAR_LLM_PROVIDER=auto` = erst **Gemini** (kostenlose Stufe, `llm.gemini`), und sobald
   dessen Kontingent leer ist oder es nicht antwortet, **Gemma 3 4B über Ollama auf dem Runner**
-  (`OLLAMA_MODEL` im Workflow, Modell wird im Actions-Cache gehalten, Zeitbudget 35 min, ca. 10 Deals).
+  (`OLLAMA_MODEL` im Workflow, Modell wird im Actions-Cache gehalten, Zeitbudget 75 min, ca. 30 Deals).
   Ohne `GEMINI_API_KEY` läuft nur das Open-Source-Modell. Lokal bleibt `provider: ollama`.
-- Benachrichtigung: **GitHub-Issue** im privaten Repo (`DEALRADAR_CHANNELS=github`), ein Issue pro
+- Benachrichtigung: **GitHub-Issue** im Repo (`DEALRADAR_CHANNELS=github`), ein Issue pro
   Lauf mit Treffern (Label `deal`), Warnungen mit Label `warnung`. GitHub schickt neue Issues per
   E-Mail und als Push in der GitHub-App – kein SMTP-Passwort nötig (Gmail-App-Passwörter waren für
   das Konto nicht verfügbar). Abhaken („Habe ich gemacht“) direkt im Issue; erledigt = Issue schließen.
@@ -251,6 +251,8 @@ Entfernen: `launchctl bootout gui/$(id -u)/de.dealradar.daily && rm ~/Library/La
 
 ## Entscheidungen (selbst getroffen, hier dokumentiert)
 
+- **Öffentliches Repo** (Wunsch: mehr Rechenzeit): Code und Treffer-Issues sind öffentlich, persönliche Daten nicht. Commits laufen über die GitHub-No-Reply-Adresse, der Obsidian-Pfad steht nur in `.env` (`DEALRADAR_VAULT_DIR`), Secrets nur als GitHub-Secret. Die frühere private Historie liegt unverändert im privaten Repo `deal-radar-alt` (Zeitplan dort abgeschaltet).
+
 - **Benachrichtigung:** E-Mail als Standard (Auswahl im Chat), ntfy ist fertig eingebaut und per `notify.channels: [email, ntfy, vault]` zuschaltbar. Mail kommt als ein Digest pro Lauf (`email_mode: per_deal` für eine Mail pro Treffer).
 - **Modell:** lokal `gemma3:12b` über Ollama (kostenlos, keine Daten verlassen den Mac). `llama3.1` (8B) wurde getestet und war zu unzuverlässig (falsche Kategorien, erfundene Order-Parameter, vertauschte Ausschlüsse). Lokal gibt es keine Websuche nach Bedingungen – meist liegen nur die Texte der Aggregatoren vor, die Meldung sagt das dann ("Bedingungen NICHT gelesen"). Alternative: `provider: anthropic` mit `claude-opus-5-5` (ca. 0,05–0,15 € pro Deal, inkl. Websuche nach Originalbedingungen und serverseitigem Fallback).
 - **Plausibilitätsprüfungen in Python** (`models.sanitize`, `check_frist`), weil lokale Modelle Schemafehler machen: "nicht empfohlen" gilt nur mit echter Begründung (Täuschung, Identität, Mehrfachkonten), leere Zins-/Orderblöcke werden entfernt, Zinsangebote unter "sonstiges" werden zu "neukundenzins", eine Frist, die nicht als Datum im Text steht, senkt die Konfidenz.
@@ -258,5 +260,5 @@ Entfernen: `launchctl bootout gui/$(id -u)/de.dealradar.daily && rm ~/Library/La
 - **Duplikate über Quellen:** Schlüssel aus Anbietername + größtem Betrag im Titel; die Quelle mit dem ausführlichsten Text (Reihenfolge in `sources.yaml`, modern-banking zuerst) wird analysiert.
 - **Vorfilter:** Funde, deren größter Betrag unter der Schwelle liegt und die weder Zins- noch Pro-Order-Bezug haben, gehen nicht ins LLM (der Nettogewinn kann nicht über der Prämie liegen).
 - **Lange Bedingungen** werden auf die relevanten Absätze gekürzt (Prämie, Teilnahme, Limits, Kombination, Fristen, Rückforderung; Auslassungen als „[…]“), damit auch das kleine Cloud-Modell sie lesen kann. Der Klausel-Scanner und die Änderungserkennung arbeiten trotzdem auf dem vollständigen Text, und die Meldung sagt, dass gekürzt wurde. Nur Texte über dem 20-Fachen des Limits (ganze AGB-Sammlungen) gelten weiter als „zu lang“. (Früher: nicht gekürzt – geändert, weil dadurch viele Bedingungen gar nicht gelesen wurden.)
-- **Cloud-Modell ohne Key:** GitHub Models wurde geprüft – der Dienst ist eingestellt (Endpunkt antwortet auf alles mit „OK“). Stattdessen läuft **Gemma 3 4B** (offene Gewichte, Ollama) direkt auf dem GitHub-Runner: kein Key, kein Tageslimit, nur Rechenzeit. Begrenzt auf 35 min pro Lauf (gemessen: ca. 3,5 min pro Deal auf dem 2-Kern-Runner, also ca. 10 Deals), damit ein Lauf unter 50 min bleibt und die 2 000 Gratis-Minuten eines privaten Repos im Monat reichen. Kleiner als lokal (12B), daher weniger zuverlässig – die Python-Prüfungen und der Klausel-Scanner fangen das ab.
+- **Cloud-Modell ohne Key:** GitHub Models wurde geprüft – der Dienst ist eingestellt (Endpunkt antwortet auf alles mit „OK“). Stattdessen läuft **Gemma 3 4B** (offene Gewichte, Ollama) direkt auf dem GitHub-Runner: kein Key, kein Tageslimit, nur Rechenzeit. Das Repo ist öffentlich: unbegrenzte Actions-Minuten und ein 4-Kern-Runner mit 16 GB (privat: 2 Kerne, 2 000 min/Monat). Gemessen ca. 2,3 min pro Deal, Budget 75 min und höchstens 40 Deals pro Lauf (`DEALRADAR_OLLAMA_MAX_MINUTES`, `DEALRADAR_MAX_DEALS` im Workflow). Kleiner als lokal (12B), daher weniger zuverlässig – die Python-Prüfungen und der Klausel-Scanner fangen das ab.
 - **Vault:** Nur neue Dateien in `Deals/`; existiert die Tagesdatei schon, entsteht `YYYY-MM-DD-2.md`. Warnungen gehen nicht in den Vault.

@@ -177,14 +177,14 @@ class GeminiLLM:
                 # einzelnes Modell nicht (mehr) verfügbar -> Ausweichmodell; fatal nur, wenn alle fehlen
                 raise ModelUnavailable(f"Gemini-Modell '{model}' nicht verfügbar: {r.text[:150]}")
             if r.status_code >= 500:
-                if attempt < 1:           # einmal kurz warten, dann nächstes Modell
+                if attempt < min(1, tries - 1):   # höchstens einmal kurz warten, dann nächstes Modell
                     time.sleep(5)
                     continue
                 raise ModelBusy(f"Gemini {model} überlastet (HTTP {r.status_code})")
             if r.status_code >= 400:
                 raise RuntimeError(f"Gemini HTTP {r.status_code}: {r.text[:300]}")
             return r.json()
-        raise RuntimeError("Gemini: keine Antwort nach 3 Versuchen")
+        raise ModelBusy(f"Gemini {model}: keine Antwort nach {tries} Versuch(en)")
 
     def _generate(self, system: str, user: str) -> str:
         gen: dict[str, Any] = {"temperature": 0, "responseMimeType": "application/json"}
