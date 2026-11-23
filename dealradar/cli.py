@@ -2,6 +2,7 @@
   python -m dealradar run [--dry-run] [--source NAME] [--limit N] [-v]
   python -m dealradar report [--limit N]
   python -m dealradar sources
+  python -m dealradar test-mail
 """
 from __future__ import annotations
 
@@ -25,6 +26,7 @@ def main(argv: list[str] | None = None) -> int:
     rep = sub.add_parser("report", help="letzte Treffer anzeigen")
     rep.add_argument("--limit", type=int, default=20)
     sub.add_parser("sources", help="konfigurierte Quellen und ihren Zustand zeigen")
+    sub.add_parser("test-mail", help="eine Testmail senden (prüft die SMTP-Daten)")
     args = p.parse_args(argv)
 
     cfg = load_config()
@@ -53,6 +55,18 @@ def main(argv: list[str] | None = None) -> int:
             for e in s.errors:
                 print(f"  - {e}")
         return 3 if s.fatal else 0     # Key/Modell kaputt -> Lauf als fehlgeschlagen sichtbar
+
+    if args.cmd == "test-mail":
+        import smtplib
+        from dealradar.notify.email import Email
+        try:
+            Email(cfg.env)._send("Deal Radar: Testmail", "Der E-Mail-Versand von Deal Radar funktioniert.\n"
+                                 "Ab jetzt kommt pro Lauf mit Treffern eine Mail.\n")
+        except (RuntimeError, smtplib.SMTPException, OSError) as e:
+            print(f"Testmail fehlgeschlagen: {type(e).__name__}: {e}", file=sys.stderr)
+            return 2
+        print("Testmail gesendet.")
+        return 0
 
     db = DB(cfg.path("db"))
     if args.cmd == "report":
