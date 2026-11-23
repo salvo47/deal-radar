@@ -219,10 +219,12 @@ ein Lauf braucht ca. 40).
   dessen Kontingent leer ist oder es nicht antwortet, **Gemma 3 4B über Ollama auf dem Runner**
   (`OLLAMA_MODEL` im Workflow, Modell wird im Actions-Cache gehalten, Zeitbudget 75 min, ca. 30 Deals).
   Ohne `GEMINI_API_KEY` läuft nur das Open-Source-Modell. Lokal bleibt `provider: ollama`.
-- Benachrichtigung: **GitHub-Issue** im Repo (`DEALRADAR_CHANNELS=github`), ein Issue pro
-  Lauf mit Treffern (Label `deal`), Warnungen mit Label `warnung`. GitHub schickt neue Issues per
-  E-Mail und als Push in der GitHub-App – kein SMTP-Passwort nötig (Gmail-App-Passwörter waren für
-  das Konto nicht verfügbar). Abhaken („Habe ich gemacht“) direkt im Issue; erledigt = Issue schließen.
+- Benachrichtigung: **GitHub-Issue** im Repo und **E-Mail-Digest** (`DEALRADAR_CHANNELS=github,email`).
+  Ein Issue pro Lauf mit Treffern (Label `deal`), Warnungen mit Label `warnung`; abhaken („Habe ich
+  gemacht“) direkt im Issue, erledigt = Issue schließen. Die Mail braucht `SMTP_USER`, `SMTP_PASSWORD`
+  (Gmail-App-Passwort, setzt Bestätigung in zwei Schritten voraus) und `MAIL_TO` in `.env`; danach
+  `scripts/set_github_secrets.sh` (überträgt die Werte als Secrets, zeigt sie nicht an). Fehlen sie,
+  wird der Mail-Kanal mit Warnung übersprungen und nur das Issue erstellt.
   Der Vault ist aus der Cloud nicht erreichbar; das Issue enthält dieselben Angaben wie die Vault-Notiz.
 - Datenbank: über den Actions-Cache von Lauf zu Lauf weitergereicht (auch nach Fehlern gesichert).
   Geht der Cache verloren (z. B. 7 Tage kein Lauf), beginnt das Dedupe neu – schlimmstenfalls

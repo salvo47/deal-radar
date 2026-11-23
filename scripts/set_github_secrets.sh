@@ -2,7 +2,7 @@
 # Überträgt die Schlüssel aus .env als verschlüsselte GitHub-Secrets (Werte werden nicht angezeigt).
 set -euo pipefail
 cd "$(dirname "$0")/.."
-for k in GEMINI_API_KEY; do
+for k in GEMINI_API_KEY SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASSWORD MAIL_FROM MAIL_TO; do
   v=$(grep -E "^$k=" .env | head -1 | cut -d= -f2- | sed -e 's/^["'\'']//' -e 's/["'\'']$//')
   if [ -n "$v" ]; then printf '%s' "$v" | gh secret set "$k" >/dev/null && echo "✓ $k"; else echo "– $k leer, übersprungen"; fi
 done
