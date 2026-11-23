@@ -271,6 +271,17 @@ def run(cfg: Config, *, dry_run: bool = False, only_source: str | None = None,
     else:
         log.info("Lauf %s: keine Treffer über der Schwelle (%d geholt, %d analysiert)",
                  today, s.fetched, s.analyzed)
+        waiting = db.conn.execute("SELECT COUNT(*) FROM deals WHERE status='pending'").fetchone()[0]
+        text = (f"Heute kein Angebot über der Schwelle von {cfg['min_net_gain_eur']:.0f} € netto.\n\n"
+                f"- {s.fetched} Einträge geholt, {s.new} neu, {s.analyzed} analysiert\n"
+                f"- {waiting} Deals warten noch auf die Analyse\n\n"
+                f"Offene Treffer der letzten Tage: Issues mit Label `deal`.")
+        for ch in channels:
+            if hasattr(ch, "send_summary"):
+                try:
+                    ch.send_summary(today.isoformat(), text)
+                except Exception as e:
+                    log.error("Tagesbericht über %s fehlgeschlagen: %s", ch.name, e)
     s.alerts = send
     return s
 

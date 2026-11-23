@@ -84,6 +84,7 @@ jobs:
           MAIL_FROM: ${{ secrets.MAIL_FROM }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DEALRADAR_GITHUB_NOTIFY: ${{ github.repository_owner }}   # @-Erwähnung -> GitHub mailt jeden Morgen
       - name: Datenbank sichern (auch nach Fehlern)
         if: always()
         uses: actions/cache/save@v4

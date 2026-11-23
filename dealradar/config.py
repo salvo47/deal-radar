@@ -54,5 +54,5 @@ def load_config(root: Path | None = None, config_file: str = "config.yaml",
     if os.environ.get("DEALRADAR_VAULT_DIR"):          # persönlicher Pfad bleibt in .env, nicht im Repo
         raw["notify"]["vault_dir"] = os.environ["DEALRADAR_VAULT_DIR"].strip()
     env = {k: v for k, v in os.environ.items()
-           if k.startswith(("SMTP_", "MAIL_", "NTFY_")) or k in ("GITHUB_TOKEN", "GITHUB_REPOSITORY")}
+           if k.startswith(("SMTP_", "MAIL_", "NTFY_")) or k in ("GITHUB_TOKEN", "GITHUB_REPOSITORY", "DEALRADAR_GITHUB_NOTIFY")}
     return Config(raw=raw, sources=sources, root=root, env=env)

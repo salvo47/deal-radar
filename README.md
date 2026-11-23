@@ -222,6 +222,9 @@ ein Lauf braucht ca. 40).
 - Benachrichtigung: **GitHub-Issue** im Repo (`DEALRADAR_CHANNELS=github`). Die Mail kommt von GitHub an die
   Adresse des GitHub-Kontos, wenn das Repo beobachtet wird (Watch → All Activity). Optional zusätzlich
   ein eigener **E-Mail-Digest** per SMTP (`github,email`).
+  Jeden Morgen kommt ein Issue: mit Treffern (Label `deal`, bleibt offen) oder ein kurzer Tagesbericht
+  (Label `bericht`, sofort geschlossen). Jedes Issue erwähnt den Repo-Inhaber (`DEALRADAR_GITHUB_NOTIFY`),
+  GitHub mailt Erwähnungen standardmäßig – auch ohne Watch.
   Ein Issue pro Lauf mit Treffern (Label `deal`), Warnungen mit Label `warnung`; abhaken („Habe ich
   gemacht“) direkt im Issue, erledigt = Issue schließen. Die Mail braucht `SMTP_USER`, `SMTP_PASSWORD`
   (Gmail-App-Passwort, setzt Bestätigung in zwei Schritten voraus) und `MAIL_TO` in `.env`; danach

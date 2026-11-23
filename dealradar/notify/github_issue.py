@@ -2,7 +2,10 @@
 
 Gedacht für den Cloud-Lauf: GitHub Actions stellt GITHUB_TOKEN und GITHUB_REPOSITORY bereit.
 GitHub schickt neue Issues per E-Mail und als Push in der GitHub-App – ohne SMTP-Passwort.
-Ein Issue pro Lauf mit Treffern (Label "deal"), Warnungen als eigenes Issue (Label "warnung")."""
+Ein Issue pro Lauf mit Treffern (Label "deal"), Warnungen als eigenes Issue (Label "warnung").
+Tage ohne Treffer: kurzer Tagesbericht (Label "bericht"), sofort geschlossen.
+DEALRADAR_GITHUB_NOTIFY=<login>: jedes Issue erwähnt diese Person (@login) – GitHub mailt Erwähnungen
+standardmäßig an die Adresse des Kontos, ohne dass das Repo beobachtet werden muss."""
 from __future__ import annotations
 
 import httpx
@@ -21,16 +24,21 @@ class GitHubIssue:
         if not token or not repo:
             raise RuntimeError("GitHub-Kanal: GITHUB_TOKEN/GITHUB_REPOSITORY fehlen (nur in GitHub Actions gesetzt)")
         self.repo = repo
+        self.notify = (env.get("DEALRADAR_GITHUB_NOTIFY") or "").strip().lstrip("@")
         self.client = client or httpx.Client(
             base_url="https://api.github.com", timeout=30,
             headers={"Authorization": f"Bearer {token}", "Accept": "application/vnd.github+json",
                      "X-GitHub-Api-Version": "2022-11-28", "User-Agent": "DealRadar"})
 
-    def _issue(self, title: str, body: str, label: str) -> None:
+    def _issue(self, title: str, body: str, label: str, close: bool = False) -> None:
         if len(body) > MAX_BODY:
             body = body[:MAX_BODY] + "\n\n… (gekürzt, vollständig im Log-Artefakt des Laufs)"
+        if self.notify:
+            body += f"\n\ncc @{self.notify}"
         r = self.client.post(f"/repos/{self.repo}/issues", json={"title": title, "body": body, "labels": [label]})
         r.raise_for_status()
+        if close and (n := r.json().get("number")):
+            self.client.patch(f"/repos/{self.repo}/issues/{n}", json={"state": "closed"}).raise_for_status()
 
     def send_alerts(self, items: list[AlertItem], run_date: str) -> None:
         if not items:
@@ -40,6 +48,9 @@ class GitHubIssue:
         body = "\n".join(head) + "\n\n---\n\n" + "\n\n---\n\n".join(deal_markdown(it) for it in items)
         self._issue(f"Deal Radar {run_date}: {len(items)} Treffer (bis {max(i.calc.netto_eur for i in items):.0f} €)",
                     body + f"\n\n> {DISCLAIMER}\n", "deal")
+
+    def send_summary(self, run_date: str, text: str) -> None:
+        self._issue(f"Deal Radar {run_date}: keine neuen Treffer", text, "bericht", close=True)
 
     def send_warning(self, title: str, text: str) -> None:
         self._issue(f"Deal Radar Warnung: {title}", text, "warnung")
