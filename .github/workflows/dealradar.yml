@@ -75,7 +75,7 @@ jobs:
           DEALRADAR_OLLAMA_MAX_CHARS: "9000"
           DEALRADAR_OLLAMA_MAX_MINUTES: "75"
           DEALRADAR_MAX_DEALS: "40"
-          DEALRADAR_CHANNELS: github,email   # E-Mail wird übersprungen, solange die SMTP-Secrets fehlen
+          DEALRADAR_CHANNELS: github        # GitHub mailt neue Issues an alle, die das Repo beobachten; für SMTP zusätzlich ,email
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           SMTP_HOST: ${{ secrets.SMTP_HOST || 'smtp.gmail.com' }}
           SMTP_PORT: ${{ secrets.SMTP_PORT || '587' }}
