@@ -9,6 +9,10 @@ on:
     # 08:15 UTC = 09:15 MEZ / 10:15 MESZ: kurz nach dem täglichen Reset des Gemini-Gratiskontingents
     # (Mitternacht Pazifikzeit). Früher am Morgen würde der Lauf das Restkontingent des Vortags erwischen.
     - cron: "15 8 * * *"
+    # GitHub startet geplante Läufe unter Last oft Stunden zu spät (beobachtet: 18:40–20:15 UTC statt 08:15).
+    # Darum mehrere Startzeiten; der Job "gate" lässt pro Tag nur den ersten erfolgreichen Lauf zu.
+    - cron: "47 3 * * *"
+    - cron: "47 5 * * *"
   workflow_dispatch:
     inputs:
       test_mail:
@@ -20,6 +24,20 @@ permissions: { contents: read, issues: write }
 env:
   OLLAMA_MODEL: gemma3:4b
 jobs:
+  gate:
+    runs-on: ubuntu-latest
+    outputs:
+      go: ${{ steps.check.outputs.go }}
+    permissions: { actions: read }
+    steps:
+      - id: check
+        env: { GH_TOKEN: "${{ github.token }}", EVENT: "${{ github.event_name }}" }
+        run: |
+          if [ "$EVENT" != "schedule" ]; then echo "go=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          today=$(date -u +%F)
+          n=$(gh api "repos/${{ github.repository }}/actions/workflows/dealradar.yml/runs?event=schedule&status=success&created=$today" -q '.total_count')
+          echo "heute schon erfolgreich: $n"
+          [ "$n" = "0" ] && echo "go=true" >> "$GITHUB_OUTPUT" || echo "go=false" >> "$GITHUB_OUTPUT"
   test-mail:
     if: ${{ inputs.test_mail }}
     runs-on: ubuntu-latest
@@ -38,7 +56,8 @@ jobs:
           MAIL_FROM: ${{ secrets.MAIL_FROM }}
           MAIL_TO: ${{ secrets.MAIL_TO }}
   run:
-    if: ${{ !inputs.test_mail }}
+    needs: gate
+    if: ${{ !inputs.test_mail && needs.gate.outputs.go == 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 150
     steps:
