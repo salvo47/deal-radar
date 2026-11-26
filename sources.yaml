@@ -26,6 +26,7 @@ mydealz:
     - https://www.mydealz.de/rss/gruppe/dsl             # Wechselbonus Internet
     - https://www.mydealz.de/rss/gruppe/preisfehler
     - https://www.mydealz.de/rss/gruppe/payback         # Punkte-Aktionen
+    - https://www.mydealz.de/rss/trending               # Hot/Top-Deals; nur Einträge mit Cashback/Bonus/Geld zurück/Preisfehler im Titel (mydealz_rss._wanted)
 
 finanztip:
   module: finanztip

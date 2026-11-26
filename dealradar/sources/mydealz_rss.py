@@ -2,10 +2,24 @@
 der Feed ist das vorgesehene maschinenlesbare Angebot)."""
 from __future__ import annotations
 
+import re
+
 import feedparser
 from bs4 import BeautifulSoup
 
 from dealradar.models import RawDeal
+
+# Der Trending-Feed (Hot/Top-Deals) besteht fast nur aus Produktrabatten. Daraus nur Einträge mit
+# Geld-zurück-Anteil im Titel übernehmen: Cashback/Portal, Geld zurück, Guthaben, Prämie/Bonus, Preisfehler, Punkte.
+_MONEY_BACK = re.compile(
+    r"\[cb\b|\bcb\b|cashback|shoop|topcashback|igraal|geld[- ]zur(?:ü|ue)ck|startguthaben|guthaben|"
+    r"prämie|praemie|bonus|preisfehler|payback|punkte", re.I)
+
+
+def _wanted(page_url: str, title: str, text: str) -> bool:
+    if "/rss/trending" not in page_url and "/rss/hot" not in page_url:
+        return True
+    return bool(_MONEY_BACK.search(title))
 
 
 def parse(xml: str, page_url: str, source: str) -> list[RawDeal]:
@@ -20,6 +34,8 @@ def parse(xml: str, page_url: str, source: str) -> list[RawDeal]:
             if isinstance(e.get(k), dict):
                 merchant = e[k].get("name", "")
         guid = e.get("id") or e.get("link")
+        if not _wanted(page_url, e.get("title", ""), b.get_text(" ", strip=True)):
+            continue
         out.append(RawDeal(source=source, source_key=guid, title=e.get("title", ""),
                            url=e.get("link", ""), text=b.get_text(" ", strip=True),
                            provider_hint=merchant, links=links,
