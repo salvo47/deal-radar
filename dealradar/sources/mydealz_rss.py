@@ -10,16 +10,23 @@ from bs4 import BeautifulSoup
 from dealradar.models import RawDeal
 
 # Der Trending-Feed (Hot/Top-Deals) besteht fast nur aus Produktrabatten. Daraus nur Einträge mit
-# Geld-zurück-Anteil im Titel übernehmen: Cashback/Portal, Geld zurück, Guthaben, Prämie/Bonus, Preisfehler, Punkte.
+# Geld-zurück-Anteil im Titel übernehmen: Cashback/Portal, Geld zurück, Guthaben, Prämie/Bonus, Preisfehler, Punkte,
+# oder stark reduziert (mind. 50 % Rabatt im Titel).
 _MONEY_BACK = re.compile(
     r"\[cb\b|\bcb\b|cashback|shoop|topcashback|igraal|geld[- ]zur(?:ü|ue)ck|startguthaben|guthaben|"
     r"prämie|praemie|bonus|preisfehler|payback|punkte", re.I)
 
 
+_PCT = re.compile(r"(?:-|minus\s*|bis zu\s*)?(\d{2})\s?%")
+
+
 def _wanted(page_url: str, title: str, text: str) -> bool:
     if "/rss/trending" not in page_url and "/rss/hot" not in page_url:
         return True
-    return bool(_MONEY_BACK.search(title))
+    if _MONEY_BACK.search(title):
+        return True
+    # stark reduziert: mind. 50 % Rabatt im Titel
+    return any(int(m.group(1)) >= 50 for m in _PCT.finditer(title))
 
 
 def parse(xml: str, page_url: str, source: str) -> list[RawDeal]:

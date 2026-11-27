@@ -44,6 +44,9 @@ def offer_key(d: RawDeal) -> str:
 
 
 def passes_prefilter(d: RawDeal, cfg: Config) -> bool:
+    from dealradar.exclude import excluded
+    if excluded(d.title, d.provider_hint):          # Energie, Internet/Mobilfunk, Verträge: nie analysieren
+        return False
     pf = cfg["prefilter"]
     if not pf.get("enabled", True):
         return True
@@ -251,7 +254,7 @@ def run(cfg: Config, *, dry_run: bool = False, only_source: str | None = None,
               f"setzt um Mitternacht pazifischer Zeit zurück, 09:00 deutscher Zeit).")
 
     # ---------- 7. Benachrichtigung ----------
-    candidates += _queued_from_db(db, {c.deal_id for c in candidates}, today)
+    candidates += _queued_from_db(db, {c.deal_id for c in candidates}, today, cfg["categories"])
     candidates.sort(key=lambda it: it.calc.netto_eur, reverse=True)
     slots = max(0, cfg["max_alerts_per_day"] - db.alerts_today())
     send, overflow = candidates[:slots], candidates[slots:]
@@ -286,7 +289,7 @@ def run(cfg: Config, *, dry_run: bool = False, only_source: str | None = None,
     return s
 
 
-def _queued_from_db(db: DB, exclude: set[str], today: date) -> list[AlertItem]:
+def _queued_from_db(db: DB, exclude: set[str], today: date, cfg_categories: dict | None = None) -> list[AlertItem]:
     """Gestern wegen Tageslimit zurückgestellte Treffer erneut berücksichtigen."""
     out = []
     for r in db.conn.execute("SELECT * FROM deals WHERE status='queued'").fetchall():
@@ -297,6 +300,10 @@ def _queued_from_db(db: DB, exclude: set[str], today: date) -> list[AlertItem]:
         if not x:
             continue
         a = DealAnalysis.model_validate_json(x["analysis_json"])
+        from dealradar.exclude import excluded
+        if (topic := excluded(r["title"], a.anbieter)) or (cfg_categories is not None and not cfg_categories.get(a.kategorie, False)):
+            db.set_status(r["deal_id"], "analyzed", f"ausgeschlossen ({topic or a.kategorie})")
+            continue
         if a.frist and a.frist < today.isoformat():
             db.set_status(r["deal_id"], "analyzed", "Frist während Warteschlange abgelaufen")
             continue

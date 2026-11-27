@@ -40,6 +40,9 @@ def decide(a: DealAnalysis, calc: CalcResult, cfg: dict[str, Any], today: date |
     # --- Filter ---
     if not cfg["categories"].get(a.kategorie, False):
         return Decision(False, f"Kategorie {a.kategorie} deaktiviert")
+    from dealradar.exclude import excluded
+    if (topic := excluded(a.anbieter)):
+        return Decision(False, f"Thema ausgeschlossen ({topic})")
     regions = set(cfg["region"])
     if "EU" in regions:
         regions |= {"DE", "AT"}   # DE und AT sind EU-Länder

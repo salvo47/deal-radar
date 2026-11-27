@@ -225,9 +225,13 @@ ein Lauf braucht ca. 40).
   Jeden Morgen kommt ein Issue: mit Treffern (Label `deal`, bleibt offen) oder ein kurzer Tagesbericht
   (Label `bericht`, sofort geschlossen). Jedes Issue erwähnt den Repo-Inhaber (`DEALRADAR_GITHUB_NOTIFY`),
   GitHub mailt Erwähnungen standardmäßig – auch ohne Watch.
+- **Ausgeschlossen (Entscheidung des Nutzers, 2026-11-27):** Strom/Gas, Internet/Mobilfunk/TV und Verträge
+  mit Laufzeit (Versicherung, Abo, Streaming). Kategorie `wechselbonus` ist aus, die mydealz-Gruppen Strom/Gas
+  und DSL sind entfernt, und `dealradar/exclude.py` sortiert solche Titel/Anbieter aus allen Quellen vor der
+  Analyse aus (auch bereits zurückgestellte Treffer). Gemeldet wird nur, was direkt Geld bringt (Prämie,
+  Bonus, Zins, Cashback) oder stark reduziert ist (Preisfehler, hoher Rabatt).
 - mydealz-Hot-Deals (`/rss/trending`): nur Einträge mit Cashback, Portal, Geld zurück, Guthaben,
-  Prämie/Bonus, Preisfehler oder Punkten im Titel; reine Produktrabatte werden nicht analysiert
-  (sonst ginge das tägliche Analysebudget an Rabatte, die nur sparen, wenn man ohnehin kaufen wollte).
+  Prämie/Bonus, Preisfehler oder Punkten im Titel oder mit mind. 50 % Rabatt im Titel.
 - Startzeit: GitHub startet geplante Läufe unter Last oft Stunden zu spät. Darum drei Startzeiten
   (03:47, 05:47, 08:15 UTC); der Job `gate` lässt pro Tag nur den ersten erfolgreichen geplanten Lauf zu.
   Ein Issue pro Lauf mit Treffern (Label `deal`), Warnungen mit Label `warnung`; abhaken („Habe ich

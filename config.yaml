@@ -11,7 +11,7 @@ categories:                     # true = aktiv
   neukundenzins: true           # 4. befristete Neukundenzinsen
   preisfehler: true             # 5. Preisfehler / außergewöhnliche Ersparnis
   cashback: true                # 6. Geld-zurück, gratis testen, Cashback auf Käufe/Verträge
-  wechselbonus: true            # 7. Wechsel-/Abschlussbonus Strom, Gas, DSL, Mobilfunk, Versicherung
+  wechselbonus: false           # 7. Wechsel-/Abschlussbonus Strom, Gas, DSL, Mobilfunk, Versicherung (aus: nur direkte Geld-/Sparaktionen; siehe dealradar/exclude.py)
   gutschein_praemie: true       # 8. Gutscheine/Punkte, die sich in Geld umwandeln lassen
   sonstiges: false
 risk_max: mittel                # niedrig | mittel | hoch
